@@ -110,6 +110,7 @@ public class Main
 		frame.add(metaGridPanel);
 
 		frame.setVisible(true);
+		frame.setTitle("Find the Anomaly");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
     }
