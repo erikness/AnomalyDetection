@@ -7,9 +7,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.CodeSource;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -19,7 +24,6 @@ import javax.swing.*;
 
 public class Main
 {
-
     public static void main(String[] args)
 	{
 		int topAreaHeight = 50;
@@ -37,19 +41,20 @@ public class Main
 		Point.gridYMin = -5;
 
 		ClassLoader cl = Main.class.getClassLoader();
-		ImageIcon checkIcon  = new ImageIcon(cl.getResource("edu/nmsu/erikness/resources/circle-check-8x.png"));
-		ImageIcon xIcon  = new ImageIcon(cl.getResource("edu/nmsu/erikness/resources/circle-x-8x.png"));
+		ImageIcon checkIcon  = loadImageAntwise("circle-check-8x.png");
+		ImageIcon xIcon  = loadImageAntwise("circle-x-8x.png");
 		URL url = cl.getResource("edu/nmsu/erikness/datasets/");
 
 		String internalDataSetsPath = "edu/nmsu/erikness/datasets/";
 		String internalResourcesPath = "edu/nmsu/erikness/resources/";
 
 		List<DataSetWithAnomaly> loadedDataSets = null;
-		if (inJar()) {
-			loadedDataSets = loadDataSetsAsJar(internalDataSetsPath);
-		} else {
-			loadedDataSets = loadDataSetsAsProject(internalDataSetsPath);
-		}
+//		if (inJar()) {
+//			loadedDataSets = loadDataSetsAsJar(internalDataSetsPath);
+//		} else {
+//			loadedDataSets = loadDataSetsAsProject(internalDataSetsPath);
+//		}
+		loadedDataSets = loadDataSetsAntwise();
 
 		JFrame frame = new JFrame();
 		frame.setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.Y_AXIS));
@@ -140,6 +145,39 @@ public class Main
 	{
 		URL here = Main.class.getClassLoader().getResource("edu/nmsu/erikness/anomalydetection/Main.class");
 		return here.toString().startsWith("jar");
+	}
+
+	private static ImageIcon loadImageAntwise(String imageName)
+	{
+		URL jarLocation = Main.class.getProtectionDomain().getCodeSource().getLocation();
+		URI jarParent;
+		try {
+			jarParent = jarLocation.toURI().resolve(".");
+		} catch (URISyntaxException e) {
+			throw new RuntimeException(e);
+		}
+		URI imageURI = jarParent.resolve(imageName);
+		try {
+			return new ImageIcon(imageURI.toURL());
+		} catch (MalformedURLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private static List<DataSetWithAnomaly> loadDataSetsAntwise()
+	{
+		String location = "datasets";  // relative to the jar file
+		URL jarLocation = Main.class.getProtectionDomain().getCodeSource().getLocation();
+		URI jarParent;
+		try {
+			jarParent = jarLocation.toURI().resolve(".");
+		} catch (URISyntaxException e) {
+			throw new RuntimeException(e);
+		}
+		URI dirURI = jarParent.resolve(location);
+		return Arrays.stream(new File(dirURI).listFiles())
+				.map(file -> DataSetWithAnomaly.fromFile(file))
+				.collect(Collectors.toList());
 	}
 
 	private static List<DataSetWithAnomaly> loadDataSetsAsJar(String internalDataSetsPath)

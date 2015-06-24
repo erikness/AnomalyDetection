@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="AnomalyDetection" default="hello">
+	<property name="src" value="src" />
+	<property name="build.base" value="bin" />
+	<property name="build.classes" value="${build.base}/classes" />
+	<property name="build.dist" value="${build.base}/dist" />
+	<property name="build.dist.staging" value="${build.dist}/staging" />
+	<property name="lib" value="lib" />
+	<property name="program.name" value="anomalydetection" />
+	<property name="main-class" value="edu.nmsu.erikness.anomalydetection.Main" />
+	<property name="version" value="1.0" />
+	
+	<target name="init">
+		<mkdir dir="${build.base}" />
+		<mkdir dir="${build.classes}" />
+		<mkdir dir="${build.dist}" />
+		<mkdir dir="${build.dist.staging}/datasets" />
+		<mkdir dir="${build.dist.staging}/datasets" />
+	</target>
+	
+	<target name="compile" depends="init">
+		<javac includeantruntime="false" srcdir="${src}" destdir="${build.classes}">
+			<classpath>
+				<fileset dir="${lib}" includes="**/*.jar" />
+			</classpath>
+		</javac>
+	</target>
+	
+	<target name="run">
+		<java classname="${main-class}">
+			<classpath>
+				<pathelement location="${build.classes}" />
+				<fileset dir="${lib}" includes="**/*.jar" />
+			</classpath>
+		</java>
+	</target>
+	
+	<target name="clean">
+		<delete dir="${build.base}" />
+	</target>
+	
+	<target name="jar" depends="compile">
+		<jar destfile="${build.dist.staging}/${program.name}-${version}.jar" basedir="${build.classes}">
+			<!-- this copies extraneous elements from the META-INF folders of libraries, but that's just clutter and should have no impact on behavior. -->
+			<zipgroupfileset dir="${lib}" includes="**/*.jar" />
+			<manifest>
+				<attribute name="Class-Path" value="${build.classes};${lib}/*" />
+				<attribute name="Main-Class" value="${main-class}" />
+			</manifest>
+		</jar>
+	</target>
+	
+	<!-- Builds the entire project in a distributable form. Not done: zipping it all into one place. -->
+	<target name="dist" depends="jar">
+		<copy todir="${build.dist.staging}/datasets">
+			<fileset dir="datasets" includes="**" />
+		</copy>
+		<copy todir="${build.dist.staging}/resources">
+			<fileset dir="resources" includes="**" />
+		</copy>
+		
+		<!-- Now that everything is in staging... -->
+		<zip basedir="${build.dist.staging}" destfile="${build.dist}/${program.name}-${version}.zip" />
+	</target>
+</project>
